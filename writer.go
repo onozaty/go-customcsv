@@ -70,8 +70,7 @@ func (w *Writer) Flush() error {
 
 func (w *Writer) WriteAll(records [][]string) error {
 	for _, record := range records {
-		err := w.Write(record)
-		if err != nil {
+		if err := w.Write(record); err != nil {
 			return err
 		}
 	}

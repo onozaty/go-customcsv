@@ -12,11 +12,20 @@ func TestNewWriter(t *testing.T) {
 	w := bufio.NewWriter(&b)
 	cw := NewWriter(w)
 
-	cw.Write([]string{"1", "2", "3", "4"})
-	cw.Write([]string{"", ",", "\"", "\"x\""})
-	cw.Write([]string{"\r", "\n", "\r\n", "a\r\nb\nc"})
+	if err := cw.Write([]string{"1", "2", "3", "4"}); err != nil {
+		t.Fatal("failed test\n", err)
+	}
+	if err := cw.Write([]string{"", ",", "\"", "\"x\""}); err != nil {
+		t.Fatal("failed test\n", err)
+	}
+	if err := cw.Write([]string{"\r", "\n", "\r\n", "a\r\nb\nc"}); err != nil {
+		t.Fatal("failed test\n", err)
+	}
 
-	cw.Flush()
+	if err := cw.Flush(); err != nil {
+		t.Fatal("failed test\n", err)
+	}
+
 	result := b.String()
 
 	expect := "1,2,3,4\r\n" +
@@ -35,11 +44,20 @@ func TestNewWriter_Delimiter(t *testing.T) {
 	cw := NewWriter(w)
 	cw.Delimiter = ';'
 
-	cw.Write([]string{"1", "2", "3"})
-	cw.Write([]string{"", "a;b;", ";"})
-	cw.Write([]string{"\r", "\n", "\r\n"})
+	if err := cw.Write([]string{"1", "2", "3"}); err != nil {
+		t.Fatal("failed test\n", err)
+	}
+	if err := cw.Write([]string{"", "a;b;", ";"}); err != nil {
+		t.Fatal("failed test\n", err)
+	}
+	if err := cw.Write([]string{"\r", "\n", "\r\n"}); err != nil {
+		t.Fatal("failed test\n", err)
+	}
 
-	cw.Flush()
+	if err := cw.Flush(); err != nil {
+		t.Fatal("failed test\n", err)
+	}
+
 	result := b.String()
 
 	expect := "1;2;3\r\n" +
@@ -58,11 +76,20 @@ func TestNewWriter_Quote(t *testing.T) {
 	cw := NewWriter(w)
 	cw.Quote = '\''
 
-	cw.Write([]string{"1", "2"})
-	cw.Write([]string{"", "'a'"})
-	cw.Write([]string{"\r", "\r\n"})
+	if err := cw.Write([]string{"1", "2"}); err != nil {
+		t.Fatal("failed test\n", err)
+	}
+	if err := cw.Write([]string{"", "'a'"}); err != nil {
+		t.Fatal("failed test\n", err)
+	}
+	if err := cw.Write([]string{"\r", "\r\n"}); err != nil {
+		t.Fatal("failed test\n", err)
+	}
 
-	cw.Flush()
+	if err := cw.Flush(); err != nil {
+		t.Fatal("failed test\n", err)
+	}
+
 	result := b.String()
 
 	expect := "1,2\r\n" +
@@ -81,11 +108,20 @@ func TestNewWriter_AllQuotes(t *testing.T) {
 	cw := NewWriter(w)
 	cw.AllQuotes = true
 
-	cw.Write([]string{"1", "2", "3"})
-	cw.Write([]string{"", ",", "\""})
-	cw.Write([]string{"\r", "\n", "a\rb\n"})
+	if err := cw.Write([]string{"1", "2", "3"}); err != nil {
+		t.Fatal("failed test\n", err)
+	}
+	if err := cw.Write([]string{"", ",", "\""}); err != nil {
+		t.Fatal("failed test\n", err)
+	}
+	if err := cw.Write([]string{"\r", "\n", "a\rb\n"}); err != nil {
+		t.Fatal("failed test\n", err)
+	}
 
-	cw.Flush()
+	if err := cw.Flush(); err != nil {
+		t.Fatal("failed test\n", err)
+	}
+
 	result := b.String()
 
 	expect := "\"1\",\"2\",\"3\"\r\n" +
@@ -104,16 +140,53 @@ func TestNewWriter_RecordSeparator(t *testing.T) {
 	cw := NewWriter(w)
 	cw.RecordSeparator = "|"
 
-	cw.Write([]string{"1", "2"})
-	cw.Write([]string{"|", ","})
-	cw.Write([]string{"\r", "\n"})
+	if err := cw.Write([]string{"1", "2"}); err != nil {
+		t.Fatal("failed test\n", err)
+	}
+	if err := cw.Write([]string{"|", ","}); err != nil {
+		t.Fatal("failed test\n", err)
+	}
+	if err := cw.Write([]string{"\r", "\n"}); err != nil {
+		t.Fatal("failed test\n", err)
+	}
 
-	cw.Flush()
+	if err := cw.Flush(); err != nil {
+		t.Fatal("failed test\n", err)
+	}
+
 	result := b.String()
 
 	expect := "1,2|" +
 		"\"|\",\",\"|" +
 		"\"\r\",\"\n\"|"
+
+	if result != expect {
+		t.Fatal("failed test\n", result)
+	}
+}
+
+func TestNewWriter_WriteAll(t *testing.T) {
+
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	cw := NewWriter(w)
+
+	err := cw.WriteAll(
+		[][]string{
+			{"1", "2", "3", "4"},
+			{"", ",", "\"", "\"x\""},
+			{"\r", "\n", "\r\n", "a\r\nb\nc"},
+		})
+
+	if err != nil {
+		t.Fatal("failed test\n", err)
+	}
+
+	result := b.String()
+
+	expect := "1,2,3,4\r\n" +
+		",\",\",\"\"\"\",\"\"\"x\"\"\"\r\n" +
+		"\"\r\",\"\n\",\"\r\n\",\"a\r\nb\nc\"\r\n"
 
 	if result != expect {
 		t.Fatal("failed test\n", result)
