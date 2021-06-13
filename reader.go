@@ -8,32 +8,48 @@ import (
 )
 
 type ParseError struct {
-	Record int
-	Column int
-	Err    error
+	Message string
+	Record  int
+	Column  int
 }
 
 func (e *ParseError) Error() string {
-	return fmt.Sprintf("parse error on record %d, column %d: %v", e.Record, e.Column, e.Err)
+	return fmt.Sprintf("parse error on record %d, column %d: %v", e.Record, e.Column, e.Message)
 }
 
 type Reader struct {
 	Delimiter              rune
 	Quote                  rune
-	SpecialRecordSeparator []rune
+	SpecialRecordSeparator string
 	r                      *bufio.Reader
 	runeBuffer             []rune
 	numRecoed              int
 }
 
-func NewReader(r io.Reader) *Reader {
+var utf8bom = []byte{0xEF, 0xBB, 0xBF}
+
+func NewReader(r io.Reader) (*Reader, error) {
+
+	br := bufio.NewReader(r)
+	mark, err := br.Peek(len(utf8bom))
+
+	if err != io.EOF && err != nil {
+		return nil, err
+	}
+
+	if reflect.DeepEqual(mark, utf8bom) {
+		// If there is a BOM, skip the BOM.
+		br.Discard(len(utf8bom))
+	}
+
 	return &Reader{
 		Delimiter:              ',',
 		Quote:                  '"',
-		SpecialRecordSeparator: nil, // 指定無しの場合は改行(\r,\n)が対象になる
-		r:                      bufio.NewReader(r),
+		SpecialRecordSeparator: "", // If not specified, a newline will be used as the record separator.
+		r:                      br,
+		runeBuffer:             []rune{},
 		numRecoed:              1,
-	}
+	}, nil
 }
 
 func (r *Reader) Read() ([]string, error) {
@@ -53,7 +69,7 @@ func (r *Reader) Read() ([]string, error) {
 		if err == io.EOF {
 
 			if quoting {
-				return nil, &ParseError{Record: r.numRecoed, Column: len(field) + 1, Err: fmt.Errorf("quote is not closed")}
+				return nil, &ParseError{Message: "quote is not closed", Record: r.numRecoed, Column: len(record) + 1}
 			}
 
 			if len(record) == 0 && len(field) == 0 {
@@ -62,10 +78,10 @@ func (r *Reader) Read() ([]string, error) {
 
 			record = append(record, string(field))
 			r.numRecoed++
-			return record, err
+			return record, nil
 		}
 
-		// レコードの終端は特殊なのでここで判定
+		// Judge the record separator first.
 		if !quoting {
 			isRecordSeparator, err := r.judgeRecordSeparator(c)
 			if err != nil {
@@ -90,16 +106,16 @@ func (r *Reader) Read() ([]string, error) {
 				quoting = false
 			}
 		case r.Quote:
-			if len(field) == 0 {
+			if !quotedField && len(field) == 0 {
 				quotedField = true
 				quoting = true
 			} else {
 				if !quotedField {
-					return nil, &ParseError{Record: r.numRecoed, Column: len(field) + 1, Err: fmt.Errorf("bare quote in non quoted field")}
+					return nil, &ParseError{Message: "bare quote in non quoted field", Record: r.numRecoed, Column: len(record) + 1}
 				}
 
 				if !quoting {
-					// クォートが2つ続いている
+					// Escaped quote.
 					field = append(field, c)
 				}
 
@@ -107,7 +123,7 @@ func (r *Reader) Read() ([]string, error) {
 			}
 		default:
 			if quotedField && !quoting {
-				return nil, &ParseError{Record: r.numRecoed, Column: len(field) + 1, Err: fmt.Errorf("extraneous or missing quote in quoted field")}
+				return nil, &ParseError{Message: "unescaped quote in quoted field", Record: r.numRecoed, Column: len(record) + 1}
 			}
 
 			field = append(field, c)
@@ -152,7 +168,8 @@ func (r *Reader) peekRune(n int) ([]rune, error) {
 		}
 
 		if err == io.EOF {
-			return r.runeBuffer, err
+			// Peek does not error on EOF. It returns only what it can read.
+			return r.runeBuffer, nil
 		}
 
 		r.runeBuffer = append(r.runeBuffer, c)
@@ -163,8 +180,8 @@ func (r *Reader) peekRune(n int) ([]rune, error) {
 
 func (r *Reader) judgeRecordSeparator(c rune) (bool, error) {
 
-	if r.SpecialRecordSeparator == nil {
-		// 改行で判定
+	if r.SpecialRecordSeparator == "" {
+		// Newlines are record separators.
 		if c == '\n' {
 			return true, nil
 		}
@@ -176,7 +193,7 @@ func (r *Reader) judgeRecordSeparator(c rune) (bool, error) {
 			}
 
 			if len(next) != 0 && next[0] == '\n' {
-				// 次が\nならば、CRLFで終端として扱うために読み飛ばしておく
+				// Use CR+LF as a single separator
 				r.readRune()
 			}
 
@@ -184,18 +201,17 @@ func (r *Reader) judgeRecordSeparator(c rune) (bool, error) {
 		}
 
 	} else {
-		// 指定した文字を行の区切りとして利用
-
-		if c == r.SpecialRecordSeparator[0] {
-			// 先頭の文字が同じ場合、2文字目以降も比較
-			other, err := r.peekRune(len(r.SpecialRecordSeparator) - 1)
+		// The specified character is the record separator.
+		if c == []rune(r.SpecialRecordSeparator)[0] {
+			// If the first character is the same, the remaining characters are included in the comparison.
+			remaining, err := r.peekRune(len(r.SpecialRecordSeparator) - 1)
 			if err != nil {
 				return false, err
 			}
 
-			if reflect.DeepEqual(r.SpecialRecordSeparator[1:], other) {
-				// 一致した場合には、読み飛ばしておく
+			if string(append([]rune{c}, remaining...)) == r.SpecialRecordSeparator {
 				for i := 1; i < len(r.SpecialRecordSeparator); i++ {
+					// Skip characters that are record separators.
 					r.readRune()
 				}
 
