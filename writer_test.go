@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestNewCsvWriter(t *testing.T) {
+func TestNewWriter(t *testing.T) {
 
 	var b bytes.Buffer
 	w := bufio.NewWriter(&b)
@@ -28,7 +28,7 @@ func TestNewCsvWriter(t *testing.T) {
 	}
 }
 
-func TestNewCsvWriter_Delimiter(t *testing.T) {
+func TestNewWriter_Delimiter(t *testing.T) {
 
 	var b bytes.Buffer
 	w := bufio.NewWriter(&b)
@@ -51,7 +51,7 @@ func TestNewCsvWriter_Delimiter(t *testing.T) {
 	}
 }
 
-func TestNewCsvWriter_Quote(t *testing.T) {
+func TestNewWriter_Quote(t *testing.T) {
 
 	var b bytes.Buffer
 	w := bufio.NewWriter(&b)
@@ -74,7 +74,7 @@ func TestNewCsvWriter_Quote(t *testing.T) {
 	}
 }
 
-func TestNewCsvWriter_AllQuotes(t *testing.T) {
+func TestNewWriter_AllQuotes(t *testing.T) {
 
 	var b bytes.Buffer
 	w := bufio.NewWriter(&b)
@@ -97,7 +97,7 @@ func TestNewCsvWriter_AllQuotes(t *testing.T) {
 	}
 }
 
-func TestNewCsvWriter_RecordSeparator(t *testing.T) {
+func TestNewWriter_RecordSeparator(t *testing.T) {
 
 	var b bytes.Buffer
 	w := bufio.NewWriter(&b)
