@@ -461,6 +461,144 @@ func TestNewReader_Quote(t *testing.T) {
 		t.Fatal("failed test\n", err)
 	}
 }
+
+func TestNewReader_VerifyFieldsPerRecord_True(t *testing.T) {
+
+	s := `a,b
+c,d,e
+`
+
+	r, err := NewReader(strings.NewReader(s))
+	r.VerifyFieldsPerRecord = true
+	if err != nil {
+		t.Fatal("failed test\n", err)
+	}
+
+	// record:1
+	{
+		record, err := r.Read()
+		if err != nil {
+			t.Fatal("failed test\n", err)
+		}
+
+		if !reflect.DeepEqual(record, []string{"a", "b"}) {
+			t.Fatal("failed test\n", record)
+		}
+	}
+
+	// record:2
+	{
+		// VerifyFieldsPerRecord = true
+		// If the number of fields is different from the first record, an error will occur.
+		_, err := r.Read()
+		if err == nil || err.Error() != "parse error on record 2: wrong number of fields" {
+			t.Fatal("failed test\n", err)
+		}
+	}
+}
+
+func TestNewReader_VerifyFieldsPerRecord_True_EOF(t *testing.T) {
+
+	s := `a,b
+c,d,e`
+
+	r, err := NewReader(strings.NewReader(s))
+	r.VerifyFieldsPerRecord = true
+	if err != nil {
+		t.Fatal("failed test\n", err)
+	}
+
+	// record:1
+	{
+		record, err := r.Read()
+		if err != nil {
+			t.Fatal("failed test\n", err)
+		}
+
+		if !reflect.DeepEqual(record, []string{"a", "b"}) {
+			t.Fatal("failed test\n", record)
+		}
+	}
+
+	// record:2
+	{
+		// VerifyFieldsPerRecord = true
+		// If the number of fields is different from the first record, an error will occur.
+		_, err := r.Read()
+		if err == nil || err.Error() != "parse error on record 2: wrong number of fields" {
+			t.Fatal("failed test\n", err)
+		}
+	}
+}
+
+func TestNewReader_VerifyFieldsPerRecord_True_FixNum(t *testing.T) {
+
+	s := `a,b
+c,d
+`
+
+	r, err := NewReader(strings.NewReader(s))
+	r.VerifyFieldsPerRecord = true
+	r.FieldsPerRecord = 1
+	if err != nil {
+		t.Fatal("failed test\n", err)
+	}
+
+	// record:1
+	{
+		// VerifyFieldsPerRecord = true and FieldsPerRecord = 1
+		// The number of fields is different from the number specified in "FieldsPerRecord", so an error occurs.
+		_, err := r.Read()
+		if err == nil || err.Error() != "parse error on record 1: wrong number of fields" {
+			t.Fatal("failed test\n", err)
+		}
+	}
+}
+
+func TestNewReader_VerifyFieldsPerRecord_False(t *testing.T) {
+
+	s := `a,b
+c,d,e
+`
+
+	r, err := NewReader(strings.NewReader(s))
+	r.VerifyFieldsPerRecord = false
+	if err != nil {
+		t.Fatal("failed test\n", err)
+	}
+
+	// record:1
+	{
+		record, err := r.Read()
+		if err != nil {
+			t.Fatal("failed test\n", err)
+		}
+
+		if !reflect.DeepEqual(record, []string{"a", "b"}) {
+			t.Fatal("failed test\n", record)
+		}
+	}
+
+	// record:2
+	{
+		// VerifyFieldsPerRecord = false
+		// If the number of fields is different from the first record, no error will occur.
+		record, err := r.Read()
+		if err != nil {
+			t.Fatal("failed test\n", err)
+		}
+
+		if !reflect.DeepEqual(record, []string{"c", "d", "e"}) {
+			t.Fatal("failed test\n", record)
+		}
+	}
+
+	_, err = r.Read()
+	if err != io.EOF {
+		t.Fatal("failed test\n", err)
+	}
+}
+
 func TestNewReader_ReadAll(t *testing.T) {
 
 	s := `a,"b","c,d"

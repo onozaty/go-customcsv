@@ -14,16 +14,22 @@ type ParseError struct {
 }
 
 func (e *ParseError) Error() string {
-	return fmt.Sprintf("parse error on record %d, column %d: %v", e.Record, e.Column, e.Message)
+	if e.Column == 0 {
+		return fmt.Sprintf("parse error on record %d: %v", e.Record, e.Message)
+	} else {
+		return fmt.Sprintf("parse error on record %d, column %d: %v", e.Record, e.Column, e.Message)
+	}
 }
 
 type Reader struct {
 	Delimiter              rune
 	Quote                  rune
 	SpecialRecordSeparator string
+	VerifyFieldsPerRecord  bool
+	FieldsPerRecord        int
 	r                      *bufio.Reader
 	runeBuffer             []rune
-	numRecoed              int
+	numRecord              int
 }
 
 var utf8bom = []byte{0xEF, 0xBB, 0xBF}
@@ -46,9 +52,10 @@ func NewReader(r io.Reader) (*Reader, error) {
 		Delimiter:              ',',
 		Quote:                  '"',
 		SpecialRecordSeparator: "", // If not specified, a newline will be used as the record separator.
+		VerifyFieldsPerRecord:  true,
 		r:                      br,
 		runeBuffer:             []rune{},
-		numRecoed:              1,
+		numRecord:              1,
 	}, nil
 }
 
@@ -69,7 +76,7 @@ func (r *Reader) Read() ([]string, error) {
 		if err == io.EOF {
 
 			if quoting {
-				return nil, &ParseError{Message: "quote is not closed", Record: r.numRecoed, Column: len(record) + 1}
+				return nil, &ParseError{Message: "quote is not closed", Record: r.numRecord, Column: len(record) + 1}
 			}
 
 			if len(record) == 0 && len(field) == 0 {
@@ -77,7 +84,10 @@ func (r *Reader) Read() ([]string, error) {
 			}
 
 			record = append(record, string(field))
-			r.numRecoed++
+			if err := r.verifyRecord(record); err != nil {
+				return nil, err
+			}
+			r.numRecord++
 			return record, nil
 		}
 
@@ -90,7 +100,10 @@ func (r *Reader) Read() ([]string, error) {
 
 			if isRecordSeparator {
 				record = append(record, string(field))
-				r.numRecoed++
+				if err := r.verifyRecord(record); err != nil {
+					return nil, err
+				}
+				r.numRecord++
 				return record, nil
 			}
 		}
@@ -111,7 +124,7 @@ func (r *Reader) Read() ([]string, error) {
 				quoting = true
 			} else {
 				if !quotedField {
-					return nil, &ParseError{Message: "bare quote in non quoted field", Record: r.numRecoed, Column: len(record) + 1}
+					return nil, &ParseError{Message: "bare quote in non quoted field", Record: r.numRecord, Column: len(record) + 1}
 				}
 
 				if !quoting {
@@ -123,7 +136,7 @@ func (r *Reader) Read() ([]string, error) {
 			}
 		default:
 			if quotedField && !quoting {
-				return nil, &ParseError{Message: "unescaped quote in quoted field", Record: r.numRecoed, Column: len(record) + 1}
+				return nil, &ParseError{Message: "unescaped quote in quoted field", Record: r.numRecord, Column: len(record) + 1}
 			}
 
 			field = append(field, c)
@@ -221,4 +234,23 @@ func (r *Reader) judgeRecordSeparator(c rune) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func (r *Reader) verifyRecord(record []string) error {
+
+	if !r.VerifyFieldsPerRecord {
+		return nil
+	}
+
+	if r.FieldsPerRecord == 0 {
+		// Keep the number of fields in the first record.
+		r.FieldsPerRecord = len(record)
+		return nil
+	}
+
+	if len(record) != r.FieldsPerRecord {
+		return &ParseError{Message: "wrong number of fields", Record: r.numRecord}
+	}
+
+	return nil
 }
