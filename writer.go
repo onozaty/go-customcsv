@@ -33,30 +33,32 @@ func (w *Writer) Write(record []string) error {
 			}
 		}
 
-		if !w.fieldNeedsQuotes(field) {
-			if _, err := w.w.WriteString(field); err != nil {
+		if w.fieldNeedsQuotes(field) {
+			// Quoted field
+			if _, err := w.w.WriteRune(w.Quote); err != nil {
 				return err
 			}
-			continue
-		}
 
-		if _, err := w.w.WriteRune(w.Quote); err != nil {
-			return err
-		}
+			if strings.ContainsRune(field, w.Quote) {
+				escaped := strings.ReplaceAll(field, string(w.Quote), string([]rune{w.Quote, w.Quote}))
+				if _, err := w.w.WriteString(escaped); err != nil {
+					return err
+				}
+			} else {
+				if _, err := w.w.WriteString(field); err != nil {
+					return err
+				}
+			}
 
-		if strings.ContainsRune(field, w.Quote) {
-			escaped := strings.ReplaceAll(field, string(w.Quote), string([]rune{w.Quote, w.Quote}))
-			if _, err := w.w.WriteString(escaped); err != nil {
+			if _, err := w.w.WriteRune(w.Quote); err != nil {
 				return err
 			}
+
 		} else {
+			// Non quoted field
 			if _, err := w.w.WriteString(field); err != nil {
 				return err
 			}
-		}
-
-		if _, err := w.w.WriteRune(w.Quote); err != nil {
-			return err
 		}
 	}
 
