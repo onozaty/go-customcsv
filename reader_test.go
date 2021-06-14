@@ -462,14 +462,13 @@ func TestNewReader_Quote(t *testing.T) {
 	}
 }
 
-func TestNewReader_VerifyFieldsPerRecord_True(t *testing.T) {
+func TestNewReader_FieldsPerRecord(t *testing.T) {
 
 	s := `a,b
 c,d,e
 `
 
 	r, err := NewReader(strings.NewReader(s))
-	r.VerifyFieldsPerRecord = true
 	if err != nil {
 		t.Fatal("failed test\n", err)
 	}
@@ -488,7 +487,6 @@ c,d,e
 
 	// record:2
 	{
-		// VerifyFieldsPerRecord = true
 		// If the number of fields is different from the first record, an error will occur.
 		_, err := r.Read()
 		if err == nil || err.Error() != "parse error on record 2: wrong number of fields" {
@@ -497,13 +495,12 @@ c,d,e
 	}
 }
 
-func TestNewReader_VerifyFieldsPerRecord_True_EOF(t *testing.T) {
+func TestNewReader_FieldsPerRecord_EOF(t *testing.T) {
 
 	s := `a,b
 c,d,e`
 
 	r, err := NewReader(strings.NewReader(s))
-	r.VerifyFieldsPerRecord = true
 	if err != nil {
 		t.Fatal("failed test\n", err)
 	}
@@ -522,7 +519,6 @@ c,d,e`
 
 	// record:2
 	{
-		// VerifyFieldsPerRecord = true
 		// If the number of fields is different from the first record, an error will occur.
 		_, err := r.Read()
 		if err == nil || err.Error() != "parse error on record 2: wrong number of fields" {
@@ -531,14 +527,13 @@ c,d,e`
 	}
 }
 
-func TestNewReader_VerifyFieldsPerRecord_True_FixNum(t *testing.T) {
+func TestNewReader_FieldsPerRecord_Positive(t *testing.T) {
 
 	s := `a,b
 c,d
 `
 
 	r, err := NewReader(strings.NewReader(s))
-	r.VerifyFieldsPerRecord = true
 	r.FieldsPerRecord = 1
 	if err != nil {
 		t.Fatal("failed test\n", err)
@@ -546,7 +541,6 @@ c,d
 
 	// record:1
 	{
-		// VerifyFieldsPerRecord = true and FieldsPerRecord = 1
 		// The number of fields is different from the number specified in "FieldsPerRecord", so an error occurs.
 		_, err := r.Read()
 		if err == nil || err.Error() != "parse error on record 1: wrong number of fields" {
@@ -555,14 +549,14 @@ c,d
 	}
 }
 
-func TestNewReader_VerifyFieldsPerRecord_False(t *testing.T) {
+func TestNewReader_FieldsPerRecord_Negative(t *testing.T) {
 
 	s := `a,b
 c,d,e
 `
 
 	r, err := NewReader(strings.NewReader(s))
-	r.VerifyFieldsPerRecord = false
+	r.FieldsPerRecord = -1
 	if err != nil {
 		t.Fatal("failed test\n", err)
 	}
@@ -581,8 +575,7 @@ c,d,e
 
 	// record:2
 	{
-		// VerifyFieldsPerRecord = false
-		// If the number of fields is different from the first record, no error will occur.
+		// No check.
 		record, err := r.Read()
 		if err != nil {
 			t.Fatal("failed test\n", err)

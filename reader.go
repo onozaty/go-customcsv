@@ -22,14 +22,27 @@ func (e *ParseError) Error() string {
 }
 
 type Reader struct {
-	Delimiter              rune
-	Quote                  rune
+	// Delimiter is the field delimiter.
+	// It is set to default comma (',') by NewReader.
+	Delimiter rune
+
+	// Quote is the field quote character.
+	// It is set to default double quote ('"') by NewReader.
+	Quote rune
+
+	// SpecialRecordSeparator is the special record separator.
+	// If not specified, a newline ('\n' '\r' '\r\n') will be used as the record separator.
 	SpecialRecordSeparator string
-	VerifyFieldsPerRecord  bool
-	FieldsPerRecord        int
-	r                      *bufio.Reader
-	runeBuffer             []rune
-	numRecord              int
+
+	// FieldsPerRecord is the number of expected fields per record.
+	// FieldsPerRecord > 0 : Checks for the specified value.
+	// FieldsPerRecord = 0 : Check by the number of fields in the first record.
+	// FieldsPerRecord < 0 : No check.
+	FieldsPerRecord int
+
+	r          *bufio.Reader
+	runeBuffer []rune
+	numRecord  int
 }
 
 var utf8bom = []byte{0xEF, 0xBB, 0xBF}
@@ -49,13 +62,11 @@ func NewReader(r io.Reader) (*Reader, error) {
 	}
 
 	return &Reader{
-		Delimiter:              ',',
-		Quote:                  '"',
-		SpecialRecordSeparator: "", // If not specified, a newline will be used as the record separator.
-		VerifyFieldsPerRecord:  true,
-		r:                      br,
-		runeBuffer:             []rune{},
-		numRecord:              1,
+		Delimiter:  ',',
+		Quote:      '"',
+		r:          br,
+		runeBuffer: []rune{},
+		numRecord:  1,
 	}, nil
 }
 
@@ -238,7 +249,8 @@ func (r *Reader) judgeRecordSeparator(c rune) (bool, error) {
 
 func (r *Reader) verifyRecord(record []string) error {
 
-	if !r.VerifyFieldsPerRecord {
+	if r.FieldsPerRecord < 0 {
+		// No check.
 		return nil
 	}
 
