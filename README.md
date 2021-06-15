@@ -1,5 +1,8 @@
 # go-customcsv
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/onozaty/go-customcsv.svg)](https://pkg.go.dev/github.com/onozaty/go-customcsv)
+[![Test](https://github.com/onozaty/go-customcsv/actions/workflows/test.yaml/badge.svg)](https://github.com/onozaty/go-customcsv/actions/workflows/test.yaml)
+
 This is a library for customizing the CSV format.
 
 You can customize the following.
