@@ -7,11 +7,22 @@ import (
 )
 
 type Writer struct {
-	Delimiter       rune
-	Quote           rune
-	AllQuotes       bool
+	// Delimiter is the field delimiter.
+	// It is set to default comma (',') by NewWriter.
+	Delimiter rune
+
+	// Quote is the field quote character.
+	// It is set to default double quote ('"') by NewWriter.
+	Quote rune
+
+	// If True, always quote the fields.
+	AllQuotes bool
+
+	// RecordSeparator is the record separator.
+	// It is set to default CRLF ('\r\n') by NewWriter.
 	RecordSeparator string
-	w               *bufio.Writer
+
+	w *bufio.Writer
 }
 
 func NewWriter(w io.Writer) *Writer {

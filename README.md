@@ -9,7 +9,7 @@ You can customize the following.
     * Quote (default: `"`)
     * Record separator (default: `\r\n`)
 * (Writer) Always quote (default: `false`)
-* (Reader) Verify the number of fields per record (default: `true`)
+* (Reader) Verify the number of fields per record (default: Check by the number of fields in the first record)
 
 In Reader, the head BOM will be automatically skipped.
 
@@ -76,4 +76,56 @@ if err != nil {
 // Customize format
 r.Delimiter = ';'
 r.SpecialRecordSeparator = "|"
+```
+
+### Writer
+
+```go
+f, err := os.Create("output.csv")
+if err != nil {
+	return err
+}
+
+w := customcsv.NewWriter(f)
+
+for _, record := range records {
+	if err := w.Write(record); err != nil {
+		return err
+	}
+}
+
+if err := w.Flush(); err != nil {
+	return err
+}
+```
+
+In `Writer`, the following items can be customized.
+
+```go
+type Writer struct {
+	// Delimiter is the field delimiter.
+	// It is set to default comma (',') by NewWriter.
+	Delimiter rune
+
+	// Quote is the field quote character.
+	// It is set to default double quote ('"') by NewWriter.
+	Quote rune
+
+	// If True, always quote the fields.
+	AllQuotes bool
+
+	// RecordSeparator is the record separator.
+	// It is set to default CRLF ('\r\n') by NewWriter.
+	RecordSeparator string
+}
+```
+
+Set this after `NewWriter()`.
+
+```go
+w := customcsv.NewWriter(f)
+
+// Customize format
+w.AllQuotes = true
+w.RecordSeparator = "\n"
 ```
