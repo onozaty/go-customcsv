@@ -47,18 +47,16 @@ type Reader struct {
 
 var utf8bom = []byte{0xEF, 0xBB, 0xBF}
 
-func NewReader(r io.Reader) (*Reader, error) {
+func NewReader(r io.Reader) *Reader {
 
 	br := bufio.NewReader(r)
 	mark, err := br.Peek(len(utf8bom))
 
-	if err != io.EOF && err != nil {
-		return nil, err
-	}
-
-	if reflect.DeepEqual(mark, utf8bom) {
-		// If there is a BOM, skip the BOM.
-		br.Discard(len(utf8bom))
+	if err == nil {
+		if reflect.DeepEqual(mark, utf8bom) {
+			// If there is a BOM, skip the BOM.
+			br.Discard(len(utf8bom))
+		}
 	}
 
 	return &Reader{
@@ -67,7 +65,7 @@ func NewReader(r io.Reader) (*Reader, error) {
 		r:          br,
 		runeBuffer: []rune{},
 		numRecord:  1,
-	}, nil
+	}
 }
 
 func (r *Reader) Read() ([]string, error) {

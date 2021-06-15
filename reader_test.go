@@ -14,10 +14,7 @@ func TestNewReader(t *testing.T) {
 "
 `
 
-	r, err := NewReader(strings.NewReader(s))
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
+	r := NewReader(strings.NewReader(s))
 
 	// record:1
 	{
@@ -43,7 +40,7 @@ func TestNewReader(t *testing.T) {
 		}
 	}
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err != io.EOF {
 		t.Fatal("failed test\n", err)
 	}
@@ -54,10 +51,7 @@ func TestNewReader_NonAscii(t *testing.T) {
 	s := `あ,"日本語,한글"
 `
 
-	r, err := NewReader(strings.NewReader(s))
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
+	r := NewReader(strings.NewReader(s))
 
 	// record:1
 	{
@@ -71,7 +65,7 @@ func TestNewReader_NonAscii(t *testing.T) {
 		}
 	}
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err != io.EOF {
 		t.Fatal("failed test\n", err)
 	}
@@ -81,10 +75,7 @@ func TestNewReader_RecordEndEOF(t *testing.T) {
 
 	s := "a,b"
 
-	r, err := NewReader(strings.NewReader(s))
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
+	r := NewReader(strings.NewReader(s))
 
 	// record:1
 	{
@@ -98,7 +89,7 @@ func TestNewReader_RecordEndEOF(t *testing.T) {
 		}
 	}
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err != io.EOF {
 		t.Fatal("failed test\n", err)
 	}
@@ -109,10 +100,7 @@ func TestNewReader_QuotedField(t *testing.T) {
 	s := `"a","","a,b","""","""""","a""b","1
 2"`
 
-	r, err := NewReader(strings.NewReader(s))
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
+	r := NewReader(strings.NewReader(s))
 
 	// record:1
 	{
@@ -126,7 +114,7 @@ func TestNewReader_QuotedField(t *testing.T) {
 		}
 	}
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err != io.EOF {
 		t.Fatal("failed test\n", err)
 	}
@@ -138,13 +126,10 @@ func TestNewReader_QuoteNotClose(t *testing.T) {
 d,e,"f,
 `
 
-	r, err := NewReader(strings.NewReader(s))
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
+	r := NewReader(strings.NewReader(s))
 
 	r.Read()
-	_, err = r.Read()
+	_, err := r.Read()
 	if err == nil || err.Error() != "parse error on record 2, column 3: quote is not closed" {
 		t.Fatal("failed test\n", err)
 	}
@@ -154,12 +139,9 @@ func TestNewReader_BareQuote(t *testing.T) {
 
 	s := `a,b",c`
 
-	r, err := NewReader(strings.NewReader(s))
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
+	r := NewReader(strings.NewReader(s))
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err == nil || err.Error() != "parse error on record 1, column 2: bare quote in non quoted field" {
 		t.Fatal("failed test\n", err)
 	}
@@ -169,12 +151,9 @@ func TestNewReader_UnescapedQuote(t *testing.T) {
 
 	s := `a,b,"c"d"`
 
-	r, err := NewReader(strings.NewReader(s))
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
+	r := NewReader(strings.NewReader(s))
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err == nil || err.Error() != "parse error on record 1, column 3: unescaped quote in quoted field" {
 		t.Fatal("failed test\n", err)
 	}
@@ -187,10 +166,7 @@ func TestNewReader_RecordSeparator_NewLine(t *testing.T) {
 		"e,f\r" +
 		"g,h"
 
-	r, err := NewReader(strings.NewReader(s))
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
+	r := NewReader(strings.NewReader(s))
 
 	// record:1 LF
 	{
@@ -240,7 +216,7 @@ func TestNewReader_RecordSeparator_NewLine(t *testing.T) {
 		}
 	}
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err != io.EOF {
 		t.Fatal("failed test\n", err)
 	}
@@ -250,10 +226,7 @@ func TestNewReader_RecordSeparator_NewLine_LastLF(t *testing.T) {
 
 	s := "a,b\r"
 
-	r, err := NewReader(strings.NewReader(s))
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
+	r := NewReader(strings.NewReader(s))
 
 	// record:1 LF
 	{
@@ -267,7 +240,7 @@ func TestNewReader_RecordSeparator_NewLine_LastLF(t *testing.T) {
 		}
 	}
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err != io.EOF {
 		t.Fatal("failed test\n", err)
 	}
@@ -278,11 +251,8 @@ func TestNewReader_SpecialRecordSeparator_OneChar(t *testing.T) {
 	s := `a,b|c,d|e
 ,"f|"`
 
-	r, err := NewReader(strings.NewReader(s))
+	r := NewReader(strings.NewReader(s))
 	r.SpecialRecordSeparator = "|"
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
 
 	// record:1
 	{
@@ -320,7 +290,7 @@ func TestNewReader_SpecialRecordSeparator_OneChar(t *testing.T) {
 		}
 	}
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err != io.EOF {
 		t.Fatal("failed test\n", err)
 	}
@@ -331,11 +301,8 @@ func TestNewReader_SpecialRecordSeparator_MultiChar(t *testing.T) {
 	s := `a,b[RS]c
 ,[RS[RS]d,"[RS]"""[RS]`
 
-	r, err := NewReader(strings.NewReader(s))
+	r := NewReader(strings.NewReader(s))
 	r.SpecialRecordSeparator = "[RS]"
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
 
 	// record:1
 	{
@@ -373,7 +340,7 @@ func TestNewReader_SpecialRecordSeparator_MultiChar(t *testing.T) {
 		}
 	}
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err != io.EOF {
 		t.Fatal("failed test\n", err)
 	}
@@ -384,11 +351,8 @@ func TestNewReader_Delimiter(t *testing.T) {
 	s := "a\tb\n" +
 		"\"\t\"\t"
 
-	r, err := NewReader(strings.NewReader(s))
+	r := NewReader(strings.NewReader(s))
 	r.Delimiter = '\t'
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
 
 	// record:1
 	{
@@ -414,7 +378,7 @@ func TestNewReader_Delimiter(t *testing.T) {
 		}
 	}
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err != io.EOF {
 		t.Fatal("failed test\n", err)
 	}
@@ -426,11 +390,8 @@ func TestNewReader_Quote(t *testing.T) {
 '''''',''
 `
 
-	r, err := NewReader(strings.NewReader(s))
+	r := NewReader(strings.NewReader(s))
 	r.Quote = '\''
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
 
 	// record:1
 	{
@@ -456,7 +417,7 @@ func TestNewReader_Quote(t *testing.T) {
 		}
 	}
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err != io.EOF {
 		t.Fatal("failed test\n", err)
 	}
@@ -468,10 +429,7 @@ func TestNewReader_FieldsPerRecord(t *testing.T) {
 c,d,e
 `
 
-	r, err := NewReader(strings.NewReader(s))
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
+	r := NewReader(strings.NewReader(s))
 
 	// record:1
 	{
@@ -500,10 +458,7 @@ func TestNewReader_FieldsPerRecord_EOF(t *testing.T) {
 	s := `a,b
 c,d,e`
 
-	r, err := NewReader(strings.NewReader(s))
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
+	r := NewReader(strings.NewReader(s))
 
 	// record:1
 	{
@@ -533,11 +488,8 @@ func TestNewReader_FieldsPerRecord_Positive(t *testing.T) {
 c,d
 `
 
-	r, err := NewReader(strings.NewReader(s))
+	r := NewReader(strings.NewReader(s))
 	r.FieldsPerRecord = 1
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
 
 	// record:1
 	{
@@ -555,11 +507,8 @@ func TestNewReader_FieldsPerRecord_Negative(t *testing.T) {
 c,d,e
 `
 
-	r, err := NewReader(strings.NewReader(s))
+	r := NewReader(strings.NewReader(s))
 	r.FieldsPerRecord = -1
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
 
 	// record:1
 	{
@@ -586,7 +535,7 @@ c,d,e
 		}
 	}
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err != io.EOF {
 		t.Fatal("failed test\n", err)
 	}
@@ -599,10 +548,7 @@ func TestNewReader_ReadAll(t *testing.T) {
 "
 `
 
-	r, err := NewReader(strings.NewReader(s))
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
+	r := NewReader(strings.NewReader(s))
 
 	records, err := r.ReadAll()
 	if err != nil {
@@ -623,10 +569,7 @@ func TestNewReader_WithBOM(t *testing.T) {
 
 	s := "\uFEFFa,b"
 
-	r, err := NewReader(strings.NewReader(s))
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
+	r := NewReader(strings.NewReader(s))
 
 	// record:1
 	{
@@ -641,7 +584,7 @@ func TestNewReader_WithBOM(t *testing.T) {
 		}
 	}
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err != io.EOF {
 		t.Fatal("failed test\n", err)
 	}
@@ -651,12 +594,9 @@ func TestNewReader_Empty(t *testing.T) {
 
 	s := ""
 
-	r, err := NewReader(strings.NewReader(s))
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
+	r := NewReader(strings.NewReader(s))
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err != io.EOF {
 		t.Fatal("failed test\n", err)
 	}
@@ -666,10 +606,7 @@ func TestNewReader_OnlyLF(t *testing.T) {
 
 	s := "\n"
 
-	r, err := NewReader(strings.NewReader(s))
-	if err != nil {
-		t.Fatal("failed test\n", err)
-	}
+	r := NewReader(strings.NewReader(s))
 
 	// record:1
 	{
@@ -683,7 +620,7 @@ func TestNewReader_OnlyLF(t *testing.T) {
 		}
 	}
 
-	_, err = r.Read()
+	_, err := r.Read()
 	if err != io.EOF {
 		t.Fatal("failed test\n", err)
 	}

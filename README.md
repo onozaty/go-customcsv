@@ -23,10 +23,7 @@ if err != nil {
 	return err
 }
 
-r, err := customcsv.NewReader(f)
-if err != nil {
-	return err
-}
+r := customcsv.NewReader(f)
 
 for {
 	record, err := r.Read()
@@ -68,10 +65,7 @@ type Reader struct {
 Set this after `NewReader()`.
 
 ```go
-r, err := customcsv.NewReader(f)
-if err != nil {
-	return err
-}
+r := customcsv.NewReader(f)
 
 // Customize format
 r.Delimiter = ';'
@@ -129,3 +123,11 @@ w := customcsv.NewWriter(f)
 w.AllQuotes = true
 w.RecordSeparator = "\n"
 ```
+
+## License
+
+MIT
+
+## Author
+
+[onozaty](https://github.com/onozaty)
